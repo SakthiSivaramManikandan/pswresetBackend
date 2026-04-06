@@ -1,0 +1,34 @@
+# Render Configuration for Node.js Backend
+# Deploy this backend folder to Render as a Web Service
+
+services:
+  - type: web
+    name: password-reset-backend
+    env: node
+    region: oregon  # Change to your preferred region
+    plan: free      # Upgrade for production use
+
+    # Build settings
+    buildCommand: npm install
+    startCommand: npm start
+
+    # Health check endpoint
+    healthCheckPath: /health
+
+    # Environment variables — set these in Render dashboard
+    # Do NOT hardcode secrets here
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      # Set these manually in Render dashboard:
+      # - MONGODB_URI
+      # - JWT_SECRET
+      # - EMAIL_HOST
+      # - EMAIL_PORT
+      # - EMAIL_USER
+      # - EMAIL_PASS
+      # - EMAIL_FROM
+      # - FRONTEND_URL (your Netlify URL)
+      # - RESET_TOKEN_EXPIRY_MINUTES (default: 15)
