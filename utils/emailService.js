@@ -8,34 +8,30 @@ const nodemailer = require("nodemailer");
 
 /**
  * Create a Nodemailer transporter based on environment config
- * Uses Ethereal for development if no EMAIL_HOST is set
+ * Uses Ethereal for development if no SMTP credentials are set
  */
 const createTransporter = async () => {
-  // Development: Use Ethereal test account
-  if (process.env.NODE_ENV !== "production" && !process.env.EMAIL_HOST) {
-    const testAccount = await nodemailer.createTestAccount();
-    console.log("📧 Using Ethereal test account:", testAccount.user);
-
+  // Use real SMTP if credentials are provided
+  if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     return nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT) || 587,
+      secure: process.env.EMAIL_PORT === "465",
       auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
   }
 
-  // Production: Use configured SMTP
+  // Fall back to Ethereal only when no credentials exist
+  const testAccount = await nodemailer.createTestAccount();
+  console.log("📧 Using Ethereal test account:", testAccount.user);
   return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_PORT === "465",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
+    host: "smtp.ethereal.email",
+    port: 587,
+    secure: false,
+    auth: { user: testAccount.user, pass: testAccount.pass },
   });
 };
 
@@ -56,8 +52,7 @@ const sendPasswordResetEmail = async (
   const transporter = await createTransporter();
 
   const mailOptions = {
-    from:
-      process.env.EMAIL_FROM || "Password Reset <noreply@passwordreset.app>",
+    from: process.env.EMAIL_FROM || "Password Reset <noreply@passwordreset.app>",
     to: toEmail,
     subject: "🔐 Password Reset Request",
     text: `
