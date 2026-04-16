@@ -1,10 +1,18 @@
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,       // smtp-relay.brevo.com
+  port: process.env.EMAIL_PORT,       // 587
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,     // a7df67001@smtp-brevo.com
+    pass: process.env.EMAIL_PASS,     // your Brevo SMTP key
+  },
+});
 
 const sendPasswordResetEmail = async (toEmail, userName, resetLink, expiryMinutes = 15) => {
-  const { data, error } = await resend.emails.send({
-    from: "Password Reset <onboarding@resend.dev>",
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,     // Password Reset App <a7df67001@smtp-brevo.com>
     to: toEmail,
     subject: "🔐 Password Reset Request",
     html: `
@@ -64,10 +72,10 @@ const sendPasswordResetEmail = async (toEmail, userName, resetLink, expiryMinute
 </body>
 </html>
     `,
-  });
+  };
 
-  if (error) throw new Error(error.message);
-  return data;
+  const info = await transporter.sendMail(mailOptions);
+  return info;
 };
 
 module.exports = { sendPasswordResetEmail };
