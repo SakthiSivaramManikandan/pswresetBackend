@@ -1,6 +1,6 @@
 // emailService.js
-import SibApiV3Sdk from "sib-api-v3-sdk";
-import dotenv from "dotenv";
+const SibApiV3Sdk = require("sib-api-v3-sdk");
+const dotenv = require("dotenv");
 dotenv.config();
 
 const client = SibApiV3Sdk.ApiClient.instance;
@@ -83,4 +83,4 @@ const sendPasswordResetEmail = async (toEmail, userName, resetLink, expiryMinute
   }
 };
 
-export default sendPasswordResetEmail;
+module.exports = { sendPasswordResetEmail };
