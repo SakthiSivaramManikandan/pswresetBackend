@@ -1,21 +1,24 @@
-const nodemailer = require("nodemailer");
+// emailService.js
+import SibApiV3Sdk from "sib-api-v3-sdk";
+import dotenv from "dotenv";
+dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,       // smtp-relay.brevo.com
-  port: process.env.EMAIL_PORT,       // 587
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,     // a7df67001@smtp-brevo.com
-    pass: process.env.EMAIL_PASS,     // your Brevo SMTP key
-  },
-});
+const client = SibApiV3Sdk.ApiClient.instance;
+const apiKey = client.authentications["api-key"];
+apiKey.apiKey = process.env.BREVO_API_KEY;
+
+const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 const sendPasswordResetEmail = async (toEmail, userName, resetLink, expiryMinutes = 15) => {
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,     // Password Reset App <a7df67001@smtp-brevo.com>
-    to: toEmail,
-    subject: "🔐 Password Reset Request",
-    html: `
+  try {
+    const emailData = {
+      sender: {
+        name: process.env.SENDER_NAME || "Password Reset App",
+        email: process.env.PASS_MAIL,
+      },
+      to: [{ email: toEmail }],
+      subject: "🔐 Password Reset Request",
+      htmlContent: `
 <!DOCTYPE html>
 <html>
 <head>
@@ -48,9 +51,7 @@ const sendPasswordResetEmail = async (toEmail, userName, resetLink, expiryMinute
     </div>
     <div class="body">
       <p class="greeting">Hi ${userName},</p>
-      <p class="message">
-        We received a request to reset your password. Click the button below to choose a new password.
-      </p>
+      <p class="message">We received a request to reset your password. Click the button below to choose a new password.</p>
       <div class="btn-container">
         <a href="${resetLink}" class="btn">Reset My Password</a>
       </div>
@@ -71,11 +72,15 @@ const sendPasswordResetEmail = async (toEmail, userName, resetLink, expiryMinute
   </div>
 </body>
 </html>
-    `,
-  };
+      `,
+    };
 
-  const info = await transporter.sendMail(mailOptions);
-  return info;
+    await tranEmailApi.sendTransacEmail(emailData);
+    console.log(`Password reset email sent to ${toEmail}`);
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    throw error;
+  }
 };
 
-module.exports = { sendPasswordResetEmail };
+export default sendPasswordResetEmail;
